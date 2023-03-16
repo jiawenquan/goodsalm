@@ -30,7 +30,6 @@ TEST(OctreeVoxelTest, InsertPointCloud)
     cloud->push_back(pt1);
     cloud->push_back(pt2);
 
-    int key_ = octree.insertPointCloud(cloud, 0);
     int key = octree.insertPointCloud(cloud, 0);
     ASSERT_EQ(key, 0); // Check if the assigned key is 0
 }
