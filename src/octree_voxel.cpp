@@ -1,7 +1,6 @@
 // octree_voxel.cpp
 #include "octree_voxel.h"
 #include <pcl/io/pcd_io.h>
-#include <pcl/filters/voxel_grid.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
 namespace goodsalm
@@ -9,19 +8,18 @@ namespace goodsalm
 
     // OctreeVoxel::OctreeVoxel(double resolution)
     //     : resolution_(resolution),
-    //       octree_(new pcl::octree::OctreePointCloudSearch<PointXYZINormalKey>(resolution)),
+    //       octree_(new pcl::octree::OctreePointCloudSearch<pcl::PointXYZINormal>(resolution)),
     //       next_key_(0) {}
 
     OctreeVoxel::OctreeVoxel(double resolution)
         : resolution_(resolution),
-        octree_(new pcl::octree::OctreePointCloudSearch<PointXYZINormalKey>(resolution)) {}
-
+          octree_(new pcl::octree::OctreePointCloudSearch<pcl::PointXYZ>(resolution)) {}
 
     OctreeVoxel::~OctreeVoxel() {}
 
     int OctreeVoxel::insertPointCloud(pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud, int key)
     {
-        pcl::PointCloud<PointXYZINormalKey>::Ptr cloud_key = convertCloudWithKey(cloud, key);
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_key = convertCloudWithKey(cloud, key);
         voxelGridFilter(cloud_key);
 
         {
@@ -61,7 +59,7 @@ namespace goodsalm
 
         deletePointCloudFromOctree(iter->second);
 
-        pcl::PointCloud<PointXYZINormalKey>::Ptr cloud_key = convertCloudWithKey(cloud, key);
+        pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud_key = convertCloudWithKey(cloud, key);
         voxelGridFilter(cloud_key);
         insertPointCloudToOctree(cloud_key);
 
@@ -70,17 +68,17 @@ namespace goodsalm
         return true;
     }
 
-    pcl::PointCloud<PointXYZINormalKey>::Ptr OctreeVoxel::convertCloudWithKey(
+    pcl::PointCloud<pcl::PointXYZINormal>::Ptr OctreeVoxel::convertCloudWithKey(
         pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud, int key)
     {
-        pcl::PointCloud<PointXYZINormalKey>::Ptr cloud_with_key(new pcl::PointCloud<PointXYZINormalKey>());
+        pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud_with_key(new pcl::PointCloud<pcl::PointXYZINormal>());
 
         // Reserve space for the new cloud
         cloud_with_key->reserve(cloud->size());
 
         for (const auto &point : *cloud)
         {
-            PointXYZINormalKey point_with_key;
+            pcl::PointXYZINormal point_with_key;
 
             point_with_key.x = point.x;
             point_with_key.y = point.y;
@@ -89,7 +87,7 @@ namespace goodsalm
             point_with_key.normal_x = point.normal_x;
             point_with_key.normal_y = point.normal_y;
             point_with_key.normal_z = point.normal_z;
-            point_with_key.key = key;
+            // point_with_key.key = key;
 
             cloud_with_key->push_back(point_with_key);
         }
@@ -97,19 +95,19 @@ namespace goodsalm
         return cloud_with_key;
     }
 
-    void OctreeVoxel::voxelGridFilter(pcl::PointCloud<PointXYZINormalKey>::Ptr cloud)
+    void OctreeVoxel::voxelGridFilter(pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud)
     {
-        pcl::VoxelGrid<PointXYZINormalKey> voxel_grid;
+        pcl::VoxelGrid<pcl::PointXYZINormal> voxel_grid;
         voxel_grid.setInputCloud(cloud);
         voxel_grid.setLeafSize(resolution_, resolution_, resolution_);
 
-        pcl::PointCloud<PointXYZINormalKey>::Ptr filtered_cloud(new pcl::PointCloud<PointXYZINormalKey>());
+        pcl::PointCloud<pcl::PointXYZINormal>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZINormal>());
         voxel_grid.filter(*filtered_cloud);
 
         cloud->swap(*filtered_cloud);
     }
 
-    void OctreeVoxel::insertPointCloudToOctree(pcl::PointCloud<PointXYZINormalKey>::Ptr cloud)
+    void OctreeVoxel::insertPointCloudToOctree(pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud)
     {
         std::unique_lock<std::mutex> lock(octree_mutex_);
         // for (const auto &point : cloud->points)
@@ -120,7 +118,7 @@ namespace goodsalm
         octree_->addPointsFromInputCloud();
     }
 
-    void OctreeVoxel::deletePointCloudFromOctree(pcl::PointCloud<PointXYZINormalKey>::Ptr cloud)
+    void OctreeVoxel::deletePointCloudFromOctree(pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud)
     {
         std::unique_lock<std::mutex> lock(octree_mutex_);
 
@@ -130,7 +128,7 @@ namespace goodsalm
         }
     }
 
-    bool OctreeVoxel::kNearestSearch(const PointXYZINormalKey &search_point, int k, std::vector<int> &k_indices, std::vector<float> &k_sqr_distances)
+    bool OctreeVoxel::kNearestSearch(const pcl::PointXYZINormal &search_point, int k, std::vector<int> &k_indices, std::vector<float> &k_sqr_distances)
     {
         std::unique_lock<std::mutex> lock(octree_mutex_);
 
@@ -142,7 +140,7 @@ namespace goodsalm
         return octree_->nearestKSearch(search_point, k, k_indices, k_sqr_distances) > 0;
     }
 
-    bool OctreeVoxel::radiusSearch(const PointXYZINormalKey &search_point, double radius, std::vector<int> &indices, std::vector<float> &sqr_distances)
+    bool OctreeVoxel::radiusSearch(const pcl::PointXYZINormal &search_point, double radius, std::vector<int> &indices, std::vector<float> &sqr_distances)
     {
         std::unique_lock<std::mutex> lock(octree_mutex_);
 
@@ -154,7 +152,7 @@ namespace goodsalm
         return octree_->radiusSearch(search_point, radius, indices, sqr_distances) > 0;
     }
 
-    pcl::PointCloud<PointXYZINormalKey>::Ptr OctreeVoxel::getLocalMap(const PointXYZINormalKey &search_point, double radius)
+    pcl::PointCloud<pcl::PointXYZ>::Ptr OctreeVoxel::getLocalMap(const pcl::PointXYZ &search_point, double radius)
     {
         std::unique_lock<std::mutex> lock(octree_mutex_);
 
@@ -167,7 +165,7 @@ namespace goodsalm
         std::vector<float> sqr_distances;
         if (octree_->radiusSearch(search_point, radius, indices, sqr_distances) > 0)
         {
-            pcl::PointCloud<PointXYZINormalKey>::Ptr local_map(new pcl::PointCloud<PointXYZINormalKey>);
+            pcl::PointCloud<pcl::PointXYZ>::Ptr local_map(new pcl::PointCloud<pcl::PointXYZ>);
             pcl::copyPointCloud(*octree_->getInputCloud(), indices, *local_map);
             return local_map;
         }
@@ -175,11 +173,11 @@ namespace goodsalm
         return nullptr;
     }
 
-    pcl::PointCloud<PointXYZINormalKey>::Ptr OctreeVoxel::mergePointClouds(const std::vector<int> &keys)
+    pcl::PointCloud<pcl::PointXYZINormal>::Ptr OctreeVoxel::mergePointClouds(const std::vector<int> &keys)
     {
         std::unique_lock<std::mutex> lock(octree_mutex_);
 
-        pcl::PointCloud<PointXYZINormalKey>::Ptr merged_cloud(new pcl::PointCloud<PointXYZINormalKey>);
+        pcl::PointCloud<pcl::PointXYZINormal>::Ptr merged_cloud(new pcl::PointCloud<pcl::PointXYZINormal>);
 
         for (const int key : keys)
         {
@@ -217,8 +215,8 @@ namespace goodsalm
             return false;
         }
 
-        // Convert the point cloud to PointXYZINormalKey type
-        pcl::PointCloud<PointXYZINormalKey>::Ptr cloud_with_key = convertCloudWithKey(cloud, key);
+        // Convert the point cloud to pcl::PointXYZ type
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_with_key = convertCloudWithKey(cloud, key);
 
         // Voxel grid filter
         voxelGridFilter(cloud_with_key);
@@ -263,7 +261,7 @@ namespace goodsalm
 
         for (const auto &kv : point_cloud_map_)
         {
-            const pcl::PointCloud<PointXYZINormalKey>::Ptr &cloud = kv.second;
+            const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud = kv.second;
             double density = cloud->size() / (cloud->sensor_origin_.norm() * cloud->sensor_origin_.norm() * M_PI);
             total_density += density;
             num_clouds++;
@@ -286,12 +284,6 @@ namespace goodsalm
             octree_->setResolution(resolution_);
         }
     }
-
-
-
-
-
-
 
     // Implement other custom features or algorithms as needed.
 

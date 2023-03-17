@@ -1,3 +1,6 @@
+# 用GPT4 设计的 体素架构， pcl 版本兼容问题，不能编译通过
+
+
 为了让另一个 GPT-4 对话生成相应的 OctreeVoxel 类，这里整理了关键的设计要求：
 
 OctreeVoxel 类应包含一个内部 OctreeNode 类，用于表示八叉树节点。
