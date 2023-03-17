@@ -49,11 +49,11 @@ namespace goodsalm
         // Update an existing point cloud frame with specified key
         bool updatePointCloud(int key, pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud);
 
-        boost::shared_ptr<pcl::PointCloud<PointXYZINormalKey>> convertCloudWithKey(
+        pcl::PointCloud<PointXYZINormalKey>::Ptr convertCloudWithKey(
             pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud, int key);
 
         // Perform voxel the point cloud
-        void voxelGridFilter(boost::shared_ptr<pcl::PointCloud<PointXYZINormalKey>> cloud);
+        void voxelGridFilter(pcl::PointCloud<PointXYZINormalKey>::Ptr cloud);
 
         // K-Nearest Neighbors search
         bool kNearestSearch(const PointXYZINormalKey &search_point, int k, std::vector<int> &k_indices, std::vector<float> &k_sqr_distances);
@@ -62,10 +62,10 @@ namespace goodsalm
         bool radiusSearch(const PointXYZINormalKey &search_point, double radius, std::vector<int> &indices, std::vector<float> &sqr_distances);
 
         // Get local map
-        boost::shared_ptr<pcl::PointCloud<PointXYZINormalKey>> getLocalMap(const PointXYZINormalKey &search_point, double radius);
+        pcl::PointCloud<PointXYZINormalKey>::Ptr getLocalMap(const PointXYZINormalKey &search_point, double radius);
 
         // Merge point cloud frames
-        boost::shared_ptr<pcl::PointCloud<PointXYZINormalKey>> mergePointClouds(const std::vector<int> &keys);
+        pcl::PointCloud<PointXYZINormalKey>::Ptr mergePointClouds(const std::vector<int> &keys);
 
         // Load point cloud frame
         bool loadPointCloud(int key, const std::string &cloud_path);
@@ -88,13 +88,13 @@ namespace goodsalm
         // int next_key_;
 
         // New member variable to store point clouds by key
-        std::unordered_map < int, boost::shared_ptr<pcl::PointCloud<PointXYZINormalKey>> point_cloud_map_;
+        std::unordered_map<int, pcl::PointCloud<PointXYZINormalKey>::Ptr> point_cloud_map_;
 
         double resolution_;
 
         // Helper functions
-        void insertPointCloudToOctree(boost::shared_ptr<pcl::PointCloud<PointXYZINormalKey>> cloud);
-        void deletePointCloudFromOctree(boost::shared_ptr<pcl::PointCloud<PointXYZINormalKey>> cloud);
+        void insertPointCloudToOctree(pcl::PointCloud<PointXYZINormalKey>::Ptr cloud);
+        void deletePointCloudFromOctree(pcl::PointCloud<PointXYZINormalKey>::Ptr cloud);
     };
 
 } // namespace goodsalm
